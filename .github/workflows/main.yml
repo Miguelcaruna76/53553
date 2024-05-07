@@ -17,7 +17,7 @@ jobs:
           $outputPath = "C:\temp\win.iso"
           Invoke-WebRequest -Uri $url -OutFile $outputPath
 
-      - name: Download ngrok
+      - name: Set up ngrok
         run: |
           Invoke-WebRequest -Uri "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile "ngrok.zip"
           Expand-Archive -Path "ngrok.zip" -DestinationPath "ngrok"
@@ -50,6 +50,3 @@ jobs:
 
       - name: Set Shutdown Time
         run: shutdown /s /t 86400000
-
-      - name: Create Tunnel
-        run: .\ngrok\ngrok.exe tcp 3389
