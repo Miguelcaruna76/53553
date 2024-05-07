@@ -53,11 +53,4 @@ jobs:
 
       - name: Create Tunnel
         run: |
-          .\ngrok\ngrok.exe tcp 3389 > ngrok_url.txt
-          Get-Content ngrok_url.txt | Select-String -Pattern "tcp://(.+):(\d+)" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $address = $_.Groups[1].Value; $port = $_.Groups[2].Value }
-          Set-Variable -Name NGROK_ADDRESS -Value $address
-          Set-Variable -Name NGROK_PORT -Value $port
-
-      - name: Connect to Ngrok tunnel
-        run: |
-          mstsc /v:$env:NGROK_ADDRESS:$env:NGROK_PORT
+          .\ngrok\ngrok.exe tcp 3389
