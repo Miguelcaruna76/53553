@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -24,13 +25,12 @@ jobs:
         shell: powershell
 
       - name: Update ngrok
-        run: .\ngrok\ngrok.exe update
-        shell: powershell
+        run: ./ngrok/ngrok.exe update
 
       - name: Auth ngrok
         run: |
           try {
-            .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+            ./ngrok/ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
           } catch {
             Write-Host "Ngrok authentication failed: $_"
             exit 1
@@ -53,4 +53,4 @@ jobs:
 
       - name: Create Tunnel
         run: |
-          .\ngrok\ngrok.exe tcp 3389
+          ./ngrok/ngrok.exe tcp 3389
