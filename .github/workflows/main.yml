@@ -5,7 +5,7 @@ on:
     inputs:
       pin:
         description: 'Enter the 6-digit PIN for Chrome Remote Desktop'
-        required: true
+        required: false
 
 jobs:
   build:
@@ -16,12 +16,9 @@ jobs:
       id: crd_setup
       run: |
         # Add steps to set up Chrome Remote Desktop
-
-    - name: Enter PIN
-      if: github.event.inputs.pin
-      run: |
-        printf "${{ github.event.inputs.pin }}\n${{ github.event.inputs.pin }}\nn\n" | sudo bash /opt/google/chrome-remote-desktop/chrome-remote-desktop --setup
-      needs: crd_setup
+        if [ -n "${{ github.event.inputs.pin }}" ]; then
+          printf "${{ github.event.inputs.pin }}\n${{ github.event.inputs.pin }}\nn\n" | sudo bash /opt/google/chrome-remote-desktop/chrome-remote-desktop --setup
+        fi
 
     - name: Start Remote Desktop Service
       run: sudo systemctl start chrome-remote-desktop.service
