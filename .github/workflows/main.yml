@@ -3,6 +3,15 @@ name: Google Remote Desktop RDP
 on:
   workflow_dispatch:
     inputs:
+      crd_setup:
+        description: 'Set up Chrome Remote Desktop'
+        required: false
+        default: 'yes'
+        options:
+          yes:
+            description: 'Yes'
+          no:
+            description: 'No'
       pin:
         description: 'Enter the 6-digit PIN for Chrome Remote Desktop'
         required: false
@@ -14,6 +23,7 @@ jobs:
     steps:
     - name: Set up CRD
       id: crd_setup
+      if: ${{ github.event.inputs.crd_setup == 'yes' }}
       run: |
         # Add steps to set up Chrome Remote Desktop
         if [ -n "${{ github.event.inputs.pin }}" ]; then
