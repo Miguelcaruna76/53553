@@ -6,10 +6,7 @@ on:
       crd_setup:
         description: 'Set up Chrome Remote Desktop'
         required: false
-        default: 'yes'
         options:
-          yes:
-            description: 'Yes'
           no:
             description: 'No'
       pin:
@@ -23,12 +20,22 @@ jobs:
     steps:
     - name: Set up CRD
       id: crd_setup
-      if: ${{ github.event.inputs.crd_setup == 'yes' }}
+      if: ${{ github.event.inputs.crd_setup }}
       run: |
         # Add steps to set up Chrome Remote Desktop
-        if [ -n "${{ github.event.inputs.pin }}" ]; then
-          printf "${{ github.event.inputs.pin }}\n${{ github.event.inputs.pin }}\nn\n" | sudo bash /opt/google/chrome-remote-desktop/chrome-remote-desktop --setup
-        fi
+        wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
+        sudo dpkg --install chrome-remote-desktop_current_amd64.deb
+        sudo apt-get install --assume-yes --fix-broken
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes xfce4 desktop-base
+        sudo bash -c 'echo "exec /etc/X11/Xsession /usr/bin/xfce4-session" > /etc/chrome-remote-desktop-session'
+        sudo usermod -a -G chrome-remote-desktop $USER
+        sudo systemctl disable lightdm.service
+
+    - name: Enter PIN
+      if: github.event.inputs.pin
+      run: |
+        printf "${{ github.event.inputs.pin }}\n${{ github.event.inputs.pin }}\nn\n" | sudo bash /opt/google/chrome-remote-desktop/chrome-remote-desktop --setup
+      needs: crd_setup
 
     - name: Start Remote Desktop Service
       run: sudo systemctl start chrome-remote-desktop.service
