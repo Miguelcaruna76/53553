@@ -1,56 +1,54 @@
-
-name: CI
+name: Google Remote Desktop RDP
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      pin:
+        description: 'Enter the 6-digit PIN for Chrome Remote Desktop'
+        required: true
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Download Windows 10 ISO
-        run: |
-          $url = "https://go.microsoft.com/fwlink/p/?LinkID=2195404&clcid=0x409&culture=en-us&country=US"
-          $outputPath = "C:\temp\win.iso"
-          Invoke-WebRequest -Uri $url -OutFile $outputPath
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Download ngrok
-        run: |
-          Invoke-WebRequest -Uri "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile "ngrok.zip"
-          Expand-Archive -Path "ngrok.zip" -DestinationPath "ngrok"
-        shell: powershell
+    - name: Set up Chrome Remote Desktop
+      run: |
+        sudo apt-get update
+        wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
+        sudo dpkg --install chrome-remote-desktop_current_amd64.deb
+        sudo apt install --assume-yes --fix-broken
+        sudo DEBIAN_FRONTEND=noninteractive apt install --assume-yes xfce4 desktop-base
+        sudo bash -c 'echo "exec /etc/X11/Xsession /usr/bin/xfce4-session" > /etc/chrome-remote-desktop-session'
+        sudo usermod -a -G chrome-remote-desktop $USER
+        sudo systemctl disable lightdm.service
 
-      - name: Update ngrok
-        run: ./ngrok/ngrok.exe update
+    - name: Authenticate with Google Remote Desktop
+      run: |
+        printf "${{ github.event.inputs.pin }}\n${{ github.event.inputs.pin }}\nn\n" | sudo bash /opt/google/chrome-remote-desktop/chrome-remote-desktop --setup
 
-      - name: Auth ngrok
-        run: |
-          try {
-            ./ngrok/ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
-          } catch {
-            Write-Host "Ngrok authentication failed: $_"
-            exit 1
-          }
-        env:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+    - name: Start Remote Desktop Service
+      run: sudo systemctl start chrome-remote-desktop.service
 
-      - name: Enable RDP User Authentication
-        run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-          net user runneradmin P@ssw0rd /add
-          net localgroup "Remote Desktop Users" runneradmin /add
-        shell: powershell
+    - name: Wait for Remote Desktop Service to start
+      run: sleep 10
 
-      - name: Enable Remote Desktop Firewall Rule
-        run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    - name: Install xrdp
+      run: sudo apt-get install -y xrdp
 
-      - name: Set Shutdown Time
-        run: shutdown /s /t 86400000
+    - name: Restart xrdp service
+      run: sudo systemctl restart xrdp
 
-      - name: Create Tunnel
-        run: |
-          ./ngrok/ngrok.exe tcp 3389
+    - name: Print IP Address
+      run: hostname -I
+
+    - name: Set up ngrok
+      uses: w9jds/ngrok-action@v2
+      with:
+        authtoken: ${{ secrets.NGROK_AUTH_TOKEN }}
+
+    - name: Keep RDP session running
+      run: tmux new -d -s RDP 'sudo systemctl restart chrome-remote-desktop.service && sleep 1d'
