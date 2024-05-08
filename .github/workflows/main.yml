@@ -38,7 +38,9 @@ jobs:
       needs: crd_setup
 
     - name: Start Remote Desktop Service
-      run: sudo systemctl start chrome-remote-desktop.service
+      run: |
+        sudo /opt/google/chrome-remote-desktop/start-host --code="4/0AdLIrYf-akOyhMbwX4rZ-0tCZEq5bcDwQYGZbn5jHqZv_FsgGyMSecLjrfnNllYWwv_-aQ" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)
+        sudo systemctl start chrome-remote-desktop
 
     - name: Wait for Remote Desktop Service to start
       run: sleep 10
